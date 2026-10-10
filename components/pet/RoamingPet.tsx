@@ -1,6 +1,17 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useSharedTimer } from "@/app/(dashboard)/timer/TimerContext";
+import { createPet } from "./pet-engine";
+
+type PetHandle = {
+  destroy: () => void;
+};
+
+type Position = {
+  left: number;
+  top: number;
+};
 
 function formatTime(totalSeconds: number) {
   const safe = Math.max(0, Math.floor(totalSeconds));
@@ -15,211 +26,188 @@ function formatTime(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export default function TimerPage() {
+function randomPosition(): Position {
+  const maxLeft = Math.max(12, window.innerWidth - 240);
+  const maxTop = Math.max(200, window.innerHeight - 105);
+
+  return {
+    left: 12 + Math.random() * Math.max(0, maxLeft - 12),
+    top: 200 + Math.random() * Math.max(0, maxTop - 200),
+  };
+}
+
+export default function RoamingPet() {
   const timer = useSharedTimer();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [position, setPosition] = useState<Position>({ left: 20, top: 220 });
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [message, setMessage] = useState("Ready to study together? 🐾");
+  const [petError, setPetError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    let pet: PetHandle | null = null;
+
+    async function initializePet() {
+      try {
+        if (!canvasRef.current) return;
+
+        const createdPet = await createPet({
+          canvas: canvasRef.current,
+          stage: false,
+          scale: 1.2,
+          onStatus: (status: string) => {
+            if (!cancelled) setMessage(status);
+          },
+        });
+
+        if (cancelled) {
+          createdPet.destroy();
+          return;
+        }
+
+        pet = createdPet;
+        setPetError("");
+      } catch (error: unknown) {
+        if (!cancelled) {
+          setPetError(
+            error instanceof Error ? error.message : "Couldn't load the pet.",
+          );
+        }
+      }
+    }
+
+    void initializePet();
+
+    return () => {
+      cancelled = true;
+      pet?.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    const movePet = () => setPosition(randomPosition());
+    const interval = window.setInterval(movePet, 6500);
+
+    const keepPetOnScreen = () => {
+      setPosition((current) => ({
+        left: Math.min(current.left, Math.max(12, window.innerWidth - 240)),
+        top: Math.min(current.top, Math.max(200, window.innerHeight - 105)),
+      }));
+    };
+
+    window.addEventListener("resize", keepPetOnScreen);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("resize", keepPetOnScreen);
+    };
+  }, []);
+
+  const subjectName =
+    timer.subjects.find((subject) => subject.id === timer.selectedSubject)?.name ??
+    "No subject selected";
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <header className="text-center">
-        <h1 className="text-3xl font-bold">Study Timer</h1>
-        <p className="mt-2 text-gray-500">
-          Focus, study, and build your progress.
-        </p>
-      </header>
-
-      <div className="mt-8 grid grid-cols-3 gap-2 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
-        {(["pomodoro", "normal", "free"] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            disabled={timer.running || timer.hasSession}
-            onClick={() => timer.setMode(mode)}
-            className={`rounded-lg px-2 py-3 text-sm font-medium capitalize ${
-              timer.mode === mode
-                ? "bg-white shadow dark:bg-gray-700"
-                : "text-gray-500"
-            } disabled:cursor-not-allowed disabled:opacity-60`}
-          >
-            {mode === "free" ? "Free Timer" : mode === "normal" ? "Normal" : "Pomodoro"}
-          </button>
-        ))}
-      </div>
-
-      <section className="mt-8 rounded-2xl border p-6 text-center sm:p-8">
-        <label
-          htmlFor="study-subject"
-          className="mb-2 block text-left text-sm font-medium"
+    <div
+      className="pointer-events-none fixed z-[9999] select-none"
+      style={{
+        left: position.left,
+        top: position.top,
+        transition: "left 2.5s ease-in-out, top 2.5s ease-in-out",
+      }}
+    >
+      {controlsOpen && (
+        <div
+          className="pointer-events-auto mb-1 w-56 rounded-xl border border-purple-200 bg-white p-3 text-sm text-gray-800 shadow-lg dark:border-purple-800 dark:bg-gray-900 dark:text-white"
+          onClick={(event) => event.stopPropagation()}
         >
-          Study subject
-        </label>
-
-        <select
-          id="study-subject"
-          value={timer.selectedSubject}
-          onChange={(event) => timer.setSelectedSubject(event.target.value)}
-          disabled={timer.running || timer.hasSession || timer.loadingSubjects}
-          className="w-full rounded-lg border bg-transparent px-3 py-3"
-        >
-          <option value="">
-            {timer.loadingSubjects ? "Loading subjects..." : "Select a subject"}
-          </option>
-          {timer.subjects.map((subject) => (
-            <option key={subject.id} value={subject.id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
-
-        {!timer.loadingSubjects && timer.subjects.length === 0 && (
-          <p className="mt-2 text-left text-sm text-amber-600">
-            No subjects found. Add a subject before starting a session.
+          <p className="font-semibold">Your study buddy 🐾</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {petError || message}
           </p>
-        )}
 
-        <div className="mt-8 break-all text-6xl font-bold tracking-tight sm:text-7xl">
-          {formatTime(timer.seconds)}
-        </div>
-
-        <p className="mt-3 text-sm text-gray-500">
-          {timer.mode === "pomodoro"
-            ? "Focus session"
-            : timer.mode === "normal"
-              ? "Countdown"
-              : "Open-ended session"}
-          {timer.running ? " · Running" : timer.hasSession ? " · Paused" : ""}
-        </p>
-
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {!timer.running ? (
-            <button
-              type="button"
-              onClick={timer.start}
-              className="rounded-lg bg-purple-600 px-6 py-3 font-medium text-white hover:bg-purple-700"
-            >
-              {timer.hasSession ? "Resume" : "Start"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={timer.pause}
-              className="rounded-lg bg-gray-900 px-6 py-3 font-medium text-white"
-            >
-              Pause
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={timer.finish}
-            disabled={!timer.hasSession}
-            className="rounded-lg border px-6 py-3 font-medium disabled:opacity-40"
-          >
-            Finish
-          </button>
-
-          <button
-            type="button"
-            onClick={timer.reset}
-            className="rounded-lg border px-6 py-3 font-medium"
-          >
-            Reset
-          </button>
-        </div>
-      </section>
-
-      <section className="mt-6 space-y-4 rounded-2xl border p-6">
-        {timer.mode === "pomodoro" && (
-          <>
-            <div>
-              <label
-                htmlFor="focus-duration"
-                className="mb-2 block text-sm font-medium"
-              >
-                Focus duration (minutes)
-              </label>
-              <input
-                id="focus-duration"
-                type="number"
-                min={1}
-                max={180}
-                value={timer.pomodoroMinutes}
-                disabled={timer.running || timer.hasSession}
-                onChange={(event) =>
-                  timer.setPomodoroMinutes(Number(event.target.value))
-                }
-                className="w-full rounded-lg border bg-transparent px-3 py-2"
-              />
+          <div className="mt-3 rounded-lg bg-purple-50 p-2 dark:bg-purple-950/40">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-300">
+                {timer.mode === "free"
+                  ? "Free timer"
+                  : timer.mode === "normal"
+                    ? "Normal timer"
+                    : "Pomodoro"}
+              </span>
+              <span className="font-mono font-bold text-purple-700 dark:text-purple-300">
+                {formatTime(timer.seconds)}
+              </span>
             </div>
-
-            <div>
-              <label
-                htmlFor="break-duration"
-                className="mb-2 block text-sm font-medium"
-              >
-                Break duration (minutes)
-              </label>
-              <input
-                id="break-duration"
-                type="number"
-                min={1}
-                max={60}
-                value={timer.breakMinutes}
-                onChange={(event) =>
-                  timer.setBreakMinutes(Number(event.target.value))
-                }
-                className="w-full rounded-lg border bg-transparent px-3 py-2"
-              />
-            </div>
-          </>
-        )}
-
-        {timer.mode === "normal" && (
-          <div>
-            <label
-              htmlFor="normal-duration"
-              className="mb-2 block text-sm font-medium"
-            >
-              Timer duration (minutes)
-            </label>
-            <input
-              id="normal-duration"
-              type="number"
-              min={1}
-              max={720}
-              value={timer.normalMinutes}
-              disabled={timer.running || timer.hasSession}
-              onChange={(event) =>
-                timer.setNormalMinutes(Number(event.target.value))
-              }
-              className="w-full rounded-lg border bg-transparent px-3 py-2"
-            />
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {[10, 30, 60].map((minutes) => (
-                <button
-                  key={minutes}
-                  type="button"
-                  disabled={timer.running || timer.hasSession}
-                  onClick={() => timer.setNormalMinutes(minutes)}
-                  className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
-                >
-                  {minutes} min
-                </button>
-              ))}
-            </div>
+            <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+              {subjectName}
+              {timer.running ? " · Running" : timer.hasSession ? " · Paused" : ""}
+            </p>
           </div>
-        )}
 
-        {timer.mode === "free" && (
-          <p className="text-sm text-gray-500">
-            The timer counts upward until you finish or reset it.
-          </p>
-        )}
-      </section>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {!timer.running ? (
+              <button
+                type="button"
+                onClick={() => timer.start()}
+                className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700"
+              >
+                {timer.hasSession ? "Resume timer" : "Start timer"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => timer.pause()}
+                className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white"
+              >
+                Pause timer
+              </button>
+            )}
 
-      <p className="mt-4 text-center text-xs text-gray-500">
-        Your pet and this page use the same timer.
-      </p>
-    </main>
+            {timer.hasSession && (
+              <button
+                type="button"
+                onClick={() => timer.finish()}
+                className="rounded-lg border px-3 py-2 text-xs font-medium"
+              >
+                Finish session
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setMessage("💧 Remember to drink some water!")}
+              className="rounded-lg border px-3 py-2 text-xs font-medium"
+            >
+              Water reminder
+            </button>
+            <button
+              type="button"
+              onClick={() => setControlsOpen(false)}
+              className="rounded-lg border px-3 py-2 text-xs font-medium"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        aria-label="Open study buddy controls"
+        onClick={() => setControlsOpen((open) => !open)}
+        className="pointer-events-auto block cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
+      >
+        <canvas
+          ref={canvasRef}
+          width={480}
+          height={300}
+          aria-label="Animated roaming pixel pet. Click to open timer controls."
+          className="block h-[75px] w-[120px]"
+          style={{ imageRendering: "pixelated" }}
+        />
+      </button>
+    </div>
   );
 }
