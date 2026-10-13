@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { TimerProvider } from "./(dashboard)/timer/TimerContext";
+import RegisterServiceWorker from "@/components/pwa/RegisterServiceWorker";
 import RoamingPet from "@/components/pet/RoamingPet";
 
 const geistSans = Geist({
@@ -19,6 +20,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Study Tracker",
   description: "Track your study progress and consistency.",
+icons: {
+  icon: "/icons/icon-512.png?v=2",
+},
 };
 
 export default function RootLayout({
@@ -30,11 +34,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <TimerProvider>
-          {children}
-          <RoamingPet />
-        </TimerProvider>
-      </body>
+  <RegisterServiceWorker />
+  <TimerProvider>
+    {children}
+    <RoamingPet />
+  </TimerProvider>
+</body>
     </html>
   );
 }

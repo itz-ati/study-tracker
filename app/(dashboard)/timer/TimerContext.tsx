@@ -30,6 +30,7 @@ pomodoroMinutes: number;
 breakMinutes: number;
 normalMinutes: number;
 loadingSubjects: boolean;
+completionCount: number;
 };
 
 type TimerContextValue = TimerState & {
@@ -57,6 +58,7 @@ pomodoroMinutes: 25,
 breakMinutes: 5,
 normalMinutes: 30,
 loadingSubjects: true,
+completionCount: 0
 };
 
 const TimerContext = createContext<TimerContextValue | null>(null);
@@ -231,6 +233,8 @@ update({
   running: false,
   hasSession: false,
   seconds: durationFor(current),
+  completionCount:
+    current.completionCount + (current.hasSession ? 1 : 0),
 });
 
 clearSessionRefs();
@@ -345,12 +349,13 @@ const interval = window.setInterval(() => {
   if (remaining === 0) {
     const sessionStartedAt = sessionStartedAtRef.current;
 
-    update({
-      ...current,
-      seconds: 0,
-      running: false,
-      hasSession: false,
-    });
+   update({
+  ...current,
+  seconds: 0,
+  running: false,
+  hasSession: false,
+  completionCount: current.completionCount + 1,
+});
 
     clearSessionRefs();
 

@@ -1,0 +1,76 @@
+{
+  "name": "Jin Sprite Kit",
+  "frameCount": 16,
+  "sourceFrameCount": 16,
+  "visibleFrameCount": 16,
+  "normalizedFrameCount": 16,
+  "exportType": "cached",
+  "exportTimestamp": "2026-10-10T21:23:47.302Z",
+  "normalizedSpritesheet": {
+    "available": true,
+    "isEnhanced": false,
+    "cellWidth": 150,
+    "cellHeight": 246,
+    "gridLayout": {
+      "columns": 4,
+      "rows": 4,
+      "totalCells": 16,
+      "note": "Grid layout: 4x4 grid containing 16 frames"
+    },
+    "url": "https://storage.googleapis.com/ai-spritesheet-maker-public/spritesheets/bb0b9e14-6a07-4a91-ac1a-1b5da5713429/normalized.png"
+  },
+  "frames": {
+    "totalCount": 16,
+    "visibleCount": 16,
+    "hiddenCount": 0,
+    "sourceCount": 16,
+    "naming": "frame_001.png, frame_002.png, etc.",
+    "source": "Pre-cached individual frames extracted from normalized spritesheet"
+  },
+  "workspace": {
+    "width": 1024,
+    "height": 1024,
+    "aspectRatio": "1.00"
+  },
+  "generation": {
+    "prompt": "make me a medium sized sprite. animated on bts jin. having simple actions. idle, walk , sad and happy\n",
+    "status": "completed",
+    "createdAt": "2026-10-10T21:20:57.174851+00:00",
+    "updatedAt": "2026-10-10T21:21:35.748672+00:00"
+  },
+  "files": [
+    "normalized_spritesheet.png",
+    "original.png",
+    "frames/frame_001.png",
+    "frames/frame_002.png",
+    "frames/frame_003.png",
+    "frames/frame_004.png",
+    "frames/frame_005.png",
+    "frames/frame_006.png",
+    "frames/frame_007.png",
+    "frames/frame_008.png",
+    "frames/frame_009.png",
+    "frames/frame_010.png",
+    "frames/frame_011.png",
+    "frames/frame_012.png",
+    "frames/frame_013.png",
+    "frames/frame_014.png",
+    "frames/frame_015.png",
+    "frames/frame_016.png",
+    "README.txt"
+  ],
+  "readme": {
+    "description": "This ZIP contains cached, pre-optimized sprite assets for \"Jin Sprite Kit\". Includes 16 individual frames, normalized spritesheet (150x246 cells), and original source image. Generated from workspace: 1024x1024px.",
+    "files": {
+      "normalized_spritesheet.png": "Pre-generated normalized spritesheet (optimal grid layout)",
+      "original.png": "Original uploaded spritesheet image",
+      "frames/": "Individual sprite frames extracted from the normalized sheet",
+      "README.txt": "Summary and usage instructions"
+    },
+    "usage": {
+      "normalizedSpritesheet": "Use for game engines that support sprite atlases. Frames read left-to-right, top-to-bottom. Check metadata.json for actual grid layout.",
+      "individualFrames": "Use for animation systems that require separate frame files. Files are named sequentially: frame_001.png, frame_002.png, etc.",
+      "originalImage": "The source spritesheet as originally uploaded. May contain irregular spacing or non-grid layout."
+    }
+  }
+}

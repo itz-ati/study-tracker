@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ActivityHeatmap from "@/components/dashboard/activity-heatmap";
 import PetWidget from "@/components/pet/PetWidget-temp";
-
+import ReminderSettings from "@/components/pwa/ReminderSettings";
 export default async function DashboardPage() {
 const supabase = await createClient();
 const { data: claimsData } = await supabase.auth.getClaims();
@@ -21,7 +21,8 @@ return ( <main className="min-h-screen bg-gray-50 px-4 py-6 dark:bg-gray-950 sm:
 Dashboard </h1> <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
 Track your study progress and consistency. </p> </div>
 
-    <ActivityHeatmap />
+    <ReminderSettings />
+<ActivityHeatmap />
   </div>
 </main>
 
