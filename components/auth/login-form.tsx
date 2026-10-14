@@ -49,7 +49,7 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-gradient-to-br from-violet-100 via-white to-fuchsia-100 px-4 py-12 dark:from-violet-900 dark:via-purple-900 dark:to-fuchsia-900 lg:grid-cols-2 lg:gap-12 lg:px-16">
+    <main className="relative grid min-h-screen w-full place-items-center overflow-hidden bg-gradient-to-br from-violet-100 via-white to-fuchsia-100 px-4 py-12 dark:from-violet-900 dark:via-purple-900 dark:to-fuchsia-900 lg:grid-cols-2 lg:gap-12 lg:px-16">
       <div
         aria-hidden="true"
         className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-violet-300/40 blur-3xl dark:bg-violet-500/20"
