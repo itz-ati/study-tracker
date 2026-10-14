@@ -1,151 +1,168 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
 const TABLE = "study_reminder_subscriptions";
 
-function isValidTimeZone(timeZone: string) {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone });
-    return true;
-  } catch {
-    return false;
-  }
+type SubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  reminder_time: string;
+  time_zone: string;
+  last_sent_on: string | null;
+};
+
+function hasValidSecret(authHeader: string | null, secret: string) {
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const received = Buffer.from(authHeader ?? "");
+
+  return (
+    received.length === expected.length &&
+    timingSafeEqual(received, expected)
+  );
 }
 
-export async function GET() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+function getLocalDateAndTime(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+
+  return {
+    date: `${part("year")}-${part("month")}-${part("day")}`,
+    time: `${part("hour")}:${part("minute")}`,
+  };
+}
+
+export async function POST(request: Request) {
+  const cronSecret = process.env.PUSH_CRON_SECRET;
+
+  if (
+    !cronSecret ||
+    !hasValidSecret(request.headers.get("authorization"), cronSecret)
+  ) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
+
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const subject = process.env.VAPID_SUBJECT;
+
+  if (!publicKey || !privateKey || !subject) {
+    return NextResponse.json(
+      { error: "Web Push server settings are missing." },
+      { status: 500 },
+    );
+  }
+
+  const vapidSubject =
+    subject.startsWith("mailto:") || subject.startsWith("https://")
+      ? subject
+      : `mailto:${subject}`;
+
+  webpush.setVapidDetails(vapidSubject, publicKey, privateKey);
 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from(TABLE)
-    .select("reminder_enabled, reminder_time, time_zone")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .select(
+      "id, endpoint, p256dh, auth, reminder_time, time_zone, last_sent_on",
+    )
+    .eq("reminder_enabled", true);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(
-    {
-      enabled: data?.reminder_enabled ?? false,
-      time: data?.reminder_time?.slice(0, 5) ?? "18:00",
-      configured: Boolean(data),
-    timeZone: data?.time_zone ?? "",
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
-}
+  const rows = (data ?? []) as SubscriptionRow[];
+  const now = new Date();
+  let sent = 0;
+  let failed = 0;
+  let removed = 0;
 
-export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  for (const row of rows) {
+    let local: ReturnType<typeof getLocalDateAndTime>;
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
-
-  if (!body || typeof body !== "object") {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
-
-  const values = body as Record<string, unknown>;
-  const enabled = values.enabled;
-  const time = values.time;
-  const timeZone = values.timeZone;
-  const subscription = values.subscription;
-
-  if (typeof enabled !== "boolean") {
-    return NextResponse.json({ error: "Choose whether reminders are enabled." }, { status: 400 });
-  }
-
-  if (typeof time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
-    return NextResponse.json({ error: "Choose a valid reminder time." }, { status: 400 });
-  }
-
-  if (typeof timeZone !== "string" || !isValidTimeZone(timeZone)) {
-    return NextResponse.json({ error: "The device time zone is invalid." }, { status: 400 });
-  }
-
-  const admin = createAdminClient();
-  const now = new Date().toISOString();
-
-  const settings = {
-    reminder_enabled: enabled,
-    reminder_time: time,
-    time_zone: timeZone,
-    updated_at: now,
-  };
-
-  // Keep this user's existing devices on the same reminder settings.
-  const { error: updateError } = await admin
-    .from(TABLE)
-    .update(settings)
-    .eq("user_id", user.id);
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  if (enabled) {
-    if (!subscription || typeof subscription !== "object") {
-      return NextResponse.json(
-        { error: "Enable notifications in your browser first." },
-        { status: 400 },
-      );
+    try {
+      local = getLocalDateAndTime(now, row.time_zone);
+    } catch {
+      failed += 1;
+      continue;
     }
 
-    const sub = subscription as {
-      endpoint?: unknown;
-      keys?: { p256dh?: unknown; auth?: unknown };
-    };
+    if (local.time !== row.reminder_time.slice(0, 5)) continue;
+    if (row.last_sent_on === local.date) continue;
 
-    if (
-      typeof sub.endpoint !== "string" ||
-      !sub.endpoint.startsWith("https://") ||
-      typeof sub.keys?.p256dh !== "string" ||
-      typeof sub.keys?.auth !== "string"
-    ) {
-      return NextResponse.json(
-        { error: "The browser notification subscription is incomplete." },
-        { status: 400 },
-      );
-    }
-
-    const { error: saveError } = await admin
+    // Claim today's reminder so overlapping runs do not send it twice.
+    const { data: claim, error: claimError } = await admin
       .from(TABLE)
-      .upsert(
+      .update({
+        last_sent_on: local.date,
+        updated_at: now.toISOString(),
+      })
+      .eq("id", row.id)
+      .or(`last_sent_on.is.null,last_sent_on.neq.${local.date}`)
+      .select("id")
+      .maybeSingle();
+
+    if (claimError) {
+      failed += 1;
+      continue;
+    }
+
+    if (!claim) continue;
+
+    try {
+      await webpush.sendNotification(
         {
-          user_id: user.id,
-          endpoint: sub.endpoint,
-          p256dh: sub.keys.p256dh,
-          auth: sub.keys.auth,
-          ...settings,
+          endpoint: row.endpoint,
+          keys: {
+            p256dh: row.p256dh,
+            auth: row.auth,
+          },
         },
-        { onConflict: "endpoint" },
+        JSON.stringify({
+          title: "Your study buddy is ready 🐾",
+          body: "A little study session can make a big difference. Ready to begin?",
+          url: "/timer",
+        }),
       );
 
-    if (saveError) {
-      return NextResponse.json({ error: saveError.message }, { status: 500 });
+      sent += 1;
+    } catch (error) {
+      const statusCode =
+        typeof error === "object" && error !== null && "statusCode" in error
+          ? Number(error.statusCode)
+          : 0;
+
+      if (statusCode === 404 || statusCode === 410) {
+        await admin.from(TABLE).delete().eq("id", row.id);
+        removed += 1;
+      } else {
+        // Let a later run retry if sending failed.
+        await admin
+          .from(TABLE)
+          .update({ last_sent_on: row.last_sent_on })
+          .eq("id", row.id)
+          .eq("last_sent_on", local.date);
+
+        failed += 1;
+      }
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ sent, failed, removed });
 }
