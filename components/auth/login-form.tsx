@@ -49,7 +49,7 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-gradient-to-br from-violet-100 via-white to-fuchsia-100 px-4 py-12 dark:from-slate-950 dark:via-violet-950 dark:to-slate-900">
+    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-gradient-to-br from-violet-100 via-white to-fuchsia-100 px-4 py-12 dark:from-slate-950 dark:via-violet-950 dark:to-slate-900 lg:grid-cols-2 lg:gap-12 lg:px-16">
       <div
         aria-hidden="true"
         className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-violet-300/40 blur-3xl dark:bg-violet-500/20"
@@ -58,7 +58,20 @@ export default function LoginForm() {
         aria-hidden="true"
         className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-fuchsia-300/40 blur-3xl dark:bg-fuchsia-500/20"
       />
-
+<aside className="relative z-10 hidden max-w-xl lg:block">
+  <p className="text-sm font-bold uppercase tracking-[0.25em] text-violet-700 dark:text-violet-300">
+    Study Tracker
+  </p>
+  <h2 className="mt-4 text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+    Small focus sessions.
+    <br />
+    Steady progress.
+  </h2>
+  <p className="mt-5 max-w-lg text-lg text-slate-600 dark:text-slate-300">
+    Plan a study session, track your progress, and let your study buddy keep
+    you company.
+  </p>
+</aside>
       <section className="relative w-full max-w-md rounded-3xl border border-white/70 bg-white/85 p-7 shadow-2xl shadow-violet-900/10 backdrop-blur-xl sm:p-9 dark:border-white/10 dark:bg-slate-900/85">
         <header className="mb-8 text-center">
           <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-violet-700 text-2xl shadow-lg shadow-violet-700/25">
