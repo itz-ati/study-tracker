@@ -30,20 +30,7 @@ export default function LoginForm() {
     }
   }
 
-  async function handleGitHubLogin() {
-    setError("");
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-    }
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -86,10 +73,7 @@ export default function LoginForm() {
         Continue with Google
       </Button>
 
-      <Button type="button" onClick={handleGitHubLogin}>
-        Continue with GitHub
-      </Button>
-
+    
       <div className="text-center text-sm text-gray-400">
         or
       </div>
