@@ -141,3 +141,13 @@ body {
   background: rgb(17 24 39 / 95%);
   color: #e5e7eb;
 }
+.jin-sprite--idle {
+  background-position-y: 0%;
+  animation: jin-sprite-glance 2.8s steps(3, end) infinite alternate;
+}
+
+@keyframes jin-sprite-glance {
+  to {
+    background-position-x: 100%;
+  }
+}
