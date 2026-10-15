@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSharedTimer } from "@/app/(dashboard)/timer/TimerContext";
 
-type Action = "walk" | "sad" | "happy";
+type Action = "idle" | "walk" | "sad" | "happy";
 
 type DragState = {
   pointerId: number;
@@ -135,12 +135,14 @@ export default function RoamingPet() {
 
   if (isAuthPage) return null;
 
-  const action: Action = celebrating
-    ? "happy"
-    : timer.hasSession && !timer.running
+ const action: Action = celebrating
+  ? "happy"
+  : timer.running
+    ? "walk"
+    : timer.hasSession
       ? "sad"
-      : "walk";
-
+      : "idle";
+      
   const message = celebrating
     ? "Session complete! 🎉"
     : timer.hasSession && !timer.running
