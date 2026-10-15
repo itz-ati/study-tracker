@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Study Tracker",
-  description: "Track your study progress and consistency.",
+  title: "Study Tracker | Study Timer & Virtual Study Buddy",
+  description:
+    "Focus with Pomodoro and free study timers, organize subjects, track your progress, and study alongside a roaming virtual pet.",
   verification: {
     google: "pxSaePZ0KZTmuDyvfAL_g55RVinI7BBuP8psvfMmiN0",
   },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
