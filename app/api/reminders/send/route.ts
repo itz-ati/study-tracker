@@ -123,8 +123,8 @@ export async function POST(request: Request) {
           },
         },
         JSON.stringify({
-          title: "Study reminder",
-          body: "Ready for a study session?",
+    title: "Your study buddy is ready 🐾",
+body: "A little study session can make a big difference. Ready to begin?",
           url: "/timer",
         }),
       );

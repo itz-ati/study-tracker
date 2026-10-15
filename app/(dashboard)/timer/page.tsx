@@ -53,22 +53,30 @@ export default function TimerPage() {
           Study subject
         </label>
 
-        <select
-          id="study-subject"
-          value={timer.selectedSubject}
-          onChange={(event) => timer.setSelectedSubject(event.target.value)}
-          disabled={timer.running || timer.hasSession || timer.loadingSubjects}
-          className="w-full rounded-lg border bg-transparent px-3 py-3"
-        >
-          <option value="">
-            {timer.loadingSubjects ? "Loading subjects..." : "Select a subject"}
-          </option>
-          {timer.subjects.map((subject) => (
-            <option key={subject.id} value={subject.id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
+       <select
+  id="study-subject"
+  value={timer.selectedSubject}
+  onChange={(event) => timer.setSelectedSubject(event.target.value)}
+  disabled={timer.running || timer.hasSession || timer.loadingSubjects}
+  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+>
+  <option
+    value=""
+    className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"
+  >
+    {timer.loadingSubjects ? "Loading subjects..." : "Select a subject"}
+  </option>
+
+  {timer.subjects.map((subject) => (
+    <option
+      key={subject.id}
+      value={subject.id}
+      className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"
+    >
+      {subject.name}
+    </option>
+  ))}
+</select>
 
         {!timer.loadingSubjects && timer.subjects.length === 0 && (
           <p className="mt-2 text-left text-sm text-amber-600">

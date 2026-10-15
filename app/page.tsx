@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import WelcomeSplash from "@/components/WelcomeSplash";
+import LandingPage from "@/components/landing/LandingPage";
 
 export default async function HomePage({
   searchParams,
@@ -22,5 +22,5 @@ export default async function HomePage({
     redirect("/dashboard");
   }
 
-  return <WelcomeSplash />;
+  return <LandingPage />;
 }

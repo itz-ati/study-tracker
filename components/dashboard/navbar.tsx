@@ -22,6 +22,10 @@ const links = [
     href: "/sessions",
     label: "Sessions",
   },
+  {
+  href: "/premium",
+  label: "Premium",
+},
 ];
 
 export default function Navbar() {
