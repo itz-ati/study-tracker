@@ -6,6 +6,7 @@ import "./globals.css";
 import { TimerProvider } from "./(dashboard)/timer/TimerContext";
 import RegisterServiceWorker from "@/components/pwa/RegisterServiceWorker";
 import RoamingPet from "@/components/pet/RoamingPet";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,9 +21,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Study Tracker",
   description: "Track your study progress and consistency.",
-icons: {
-  icon: "/icons/icon-512.png?v=2",
-},
+  icons: {
+    icon: "/icons/icon-512.png?v=2",
+  },
 };
 
 export default function RootLayout({
@@ -33,13 +34,14 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-  <RegisterServiceWorker />
-  <TimerProvider>
-    {children}
-    <RoamingPet />
-  </TimerProvider>
-</body>
+      <body className="flex min-h-full flex-col">
+        <RegisterServiceWorker />
+        <TimerProvider>
+          {children}
+          <RoamingPet />
+        </TimerProvider>
+            <Analytics />
+      </body>
     </html>
   );
 }
