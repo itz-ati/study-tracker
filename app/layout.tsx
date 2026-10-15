@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Study Tracker",
   description: "Track your study progress and consistency.",
-  icons: {
-    icon: "/icons/icon-512.png?v=2",
+  verification: {
+    google: "pxSaePZ0KZTmuDyvfAL_g55RVinI7BBuP8psvfMmiN0",
   },
 };
 
